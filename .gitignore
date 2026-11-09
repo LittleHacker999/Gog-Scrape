@@ -1,0 +1,15 @@
+# ---- credentials: never commit ----
+accounts.json
+cookies.txt
+cookies*.txt
+*.cookies
+cookie.txt
+.env
+nohup.out
+*.log
+
+# ---- generated / state ----
+cache/
+GOG/
+*.part
+node_modules/

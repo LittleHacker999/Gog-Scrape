@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GOG Link Library</title>
+<style>
+  :root{
+    --bg:#0d1017; --bg2:#141a24; --bg3:#1b2431; --line:#243042;
+    --fg:#e6edf6; --dim:#8fa3bd; --dim2:#5f7391;
+    --acc:#a56bff; --acc2:#7c4dff; --ok:#3ddc97; --warn:#ffb02e; --err:#ff5d6c;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 600px at 15% -10%,#1d1533 0%,transparent 60%),
+               radial-gradient(900px 500px at 100% 0%,#0d2a2b 0%,transparent 55%),var(--bg);
+    color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--acc);text-decoration:none}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 80px}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.2px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,var(--acc),#4b2ba8);
+        display:grid;place-items:center;font-size:15px;font-weight:800;color:#fff;box-shadow:0 6px 18px -6px var(--acc2)}
+  .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--line);
+        border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim2)}
+  .dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .dot.err{background:var(--err);box-shadow:0 0 8px var(--err)}
+
+  select,input[type=text],input[type=password]{
+    background:var(--bg2);border:1px solid var(--line);color:var(--fg);border-radius:10px;
+    padding:9px 12px;font:inherit;outline:none;transition:border-color .15s
+  }
+  select:focus,input:focus{border-color:var(--acc)}
+  .btn{background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:14px}
+  .btn:hover{border-color:var(--acc);color:#fff}
+  .btn.primary{background:linear-gradient(145deg,var(--acc),var(--acc2));border-color:transparent;color:#fff;font-weight:600}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ---------- search ---------- */
+  .searchbox{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:6px;
+             display:flex;gap:6px;align-items:center;box-shadow:0 20px 50px -30px #000}
+  .searchbox input{flex:1;background:transparent;border:0;padding:12px 10px;font-size:16px}
+  .searchbox input:focus{border:0}
+  .tabs{display:flex;background:var(--bg);border-radius:11px;padding:3px;gap:2px}
+  .tabs button{background:transparent;border:0;border-radius:8px;padding:7px 13px;font-size:13px;color:var(--dim)}
+  .tabs button.on{background:var(--bg3);color:#fff}
+
+  /* ---------- banners ---------- */
+  .banner{border-radius:14px;padding:16px 18px;margin:18px 0;border:1px solid;font-size:14px}
+  .banner.warn{background:#2a2110;border-color:#5a4318;color:#ffd79a}
+  .banner.err{background:#2a1216;border-color:#5c2028;color:#ffb3ba}
+  .banner.info{background:#151d2b;border-color:var(--line);color:var(--dim)}
+  .banner code{background:#00000055;padding:2px 6px;border-radius:5px;font-family:var(--mono);font-size:12.5px;color:#dcd4ff}
+  .banner h4{margin:0 0 6px;font-size:14px;color:inherit}
+
+  /* ---------- results ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:18px}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:13px 15px;
+        text-align:left;transition:transform .12s,border-color .12s,background .12s;display:block;width:100%}
+  .card:hover{transform:translateY(-2px);border-color:var(--acc);background:var(--bg3)}
+  .card .t{font-weight:600;margin-bottom:5px;line-height:1.3}
+  .card .m{font-size:12px;color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+  .tag{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--dim)}
+  .tag.own{color:var(--ok);border-color:#1d4a3a}
+  .tag.notown{color:var(--dim2)}
+
+  /* ---------- detail ---------- */
+  .back{margin:4px 0 16px;background:none;border:0;color:var(--dim);padding:0;font-size:14px}
+  .back:hover{color:var(--acc)}
+  h2.title{margin:0 0 6px;font-size:26px;letter-spacing:-.4px}
+  .meta{color:var(--dim);font-size:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}
+  .chip{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--dim)}
+  .chip.on{background:var(--acc2);border-color:var(--acc);color:#fff}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 10px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
+           color:var(--dim2);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody td{padding:10px;border-bottom:1px solid #1b2432;vertical-align:middle}
+  tbody tr:hover{background:#ffffff06}
+  .name{font-weight:500}
+  .sub{font-family:var(--mono);font-size:11px;color:var(--dim2);word-break:break-all;margin-top:3px}
+  .badge{font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--dim);white-space:nowrap}
+  .badge.installer{color:#9ad6ff;border-color:#1d3a52}
+  .badge.patch{color:#ffd79a;border-color:#52401d}
+  .badge.extras{color:#c6b3ff;border-color:#3a2a5c}
+  .badge.dlc{color:#8fe6c8;border-color:#1d4a3f}
+  .badge.galaxy{color:#ffb3d1;border-color:#4a1d33}
+  .size{color:var(--dim);font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .acts{display:flex;gap:6px;justify-content:flex-end}
+  .acts .btn{padding:5px 10px;font-size:12px;border-radius:8px}
+
+  .loading{display:flex;align-items:center;gap:10px;color:var(--dim);padding:26px 4px;font-size:14px}
+  .spin{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;
+        animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .skeleton{height:64px;border-radius:14px;background:linear-gradient(90deg,#151d29,#1d2836,#151d29);
+            background-size:200% 100%;animation:sk 1.2s ease-in-out infinite;margin-bottom:12px}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+         background:#1f2b3d;border:1px solid var(--acc);color:#fff;padding:11px 18px;border-radius:12px;
+         font-size:13.5px;transition:.22s;box-shadow:0 20px 50px -20px #000;max-width:90vw;z-index:50}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  dialog{background:var(--bg2);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:520px;width:92vw}
+  dialog::backdrop{background:#000a}
+  dialog h3{margin:0 0 6px;font-size:17px}
+  dialog p{color:var(--dim);font-size:13px;margin:0 0 14px}
+  dialog input{width:100%;margin-bottom:12px}
+  .row{display:flex;gap:8px;justify-content:flex-end}
+  footer{margin-top:44px;color:var(--dim2);font-size:12px;border-top:1px solid var(--line);padding-top:14px;line-height:1.7}
+  footer code{font-family:var(--mono);color:var(--dim)}
+  @media(max-width:640px){
+    .hide-sm{display:none}
+    thead{display:none}
+    tbody td{display:block;border:0;padding:4px 10px}
+    tbody tr{display:block;border-bottom:1px solid #1b2432;padding:8px 0}
+    .acts{justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="logo">G</span> GOG Link Library</div>
+    <span class="spacer"></span>
+    <span class="pill" id="healthPill"><span class="dot" id="healthDot"></span><span id="healthText">connecting…</span></span>
+    <select id="accountSel" title="Account"></select>
+    <button class="btn ghost" id="acctBtn" title="Accounts &amp; API key">⚙︎</button>
+  </header>
+
+  <div class="searchbox">
+    <input id="q" type="text" placeholder="Search a game — e.g. Cyberpunk 2077, The Witcher 3…" autocomplete="off" spellcheck="false">
+    <div class="tabs hide-sm">
+      <button data-scope="library" class="on">My library</button>
+      <button data-scope="store">GOG store</button>
+    </div>
+    <button class="btn primary" id="goBtn">Search</button>
+  </div>
+
+  <div id="alerts"></div>
+  <main id="main"></main>
+
+  <footer>
+    Links are scraped live from GOG on every request — the server stores no download links.
+    <br>API: <code>GET /api/&lt;account&gt;/game/&lt;id-or-name&gt;</code> (or <code>/&lt;account&gt;/game/…</code>) ·
+    <code>GET /api/&lt;account&gt;/search?q=</code> ·
+    <code>GET /api/search?q=</code> (all accounts) · <code>GET /api/game/&lt;id&gt;</code> ·
+    <code>GET /api/owned/&lt;id&gt;</code> · <code>GET /api/catalog?q=</code> ·
+    <code>GET /api/health</code>
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<dialog id="acctDialog">
+  <h3>Accounts &amp; access</h3>
+  <p>Accounts are defined in <code>accounts.json</code> on the server. Reload after editing the file.
+     Set an API key here if the server was started with <code>API_KEY</code>.</p>
+  <div id="acctList" style="margin-bottom:14px"></div>
+  <label style="font-size:12px;color:var(--dim)">API key (sent as X-API-Key)</label>
+  <input id="keyInput" type="password" placeholder="leave empty if the server has no API_KEY">
+  <div class="row">
+    <button class="btn" id="reloadAccts">Reload accounts</button>
+    <button class="btn primary" id="saveKey">Save key</button>
+  </div>
+</dialog>
+
+<script>
+/* ------------------------------------------------------------------ state */
+const S = {
+  accounts: [],
+  account: localStorage.getItem('gog.account') || '',
+  scope: 'library',
+  game: null,
+  files: [],
+  filters: { type: '', os: '' },
+  apiKey: localStorage.getItem('gog.apiKey') || '',
+};
+
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => !n ? '0 B' : (() => { const u = ['B','KB','MB','GB','TB']; let i = 0; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; } return `${i ? n.toFixed(1) : Math.round(n)} ${u[i]}`; })();
+
+function toast(msg, ms = 2200) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ------------------------------------------------------------------- api */
+async function api(path) {
+  const headers = {};
+  if (S.apiKey) headers['X-API-Key'] = S.apiKey;
+  const res = await fetch(path, { headers });
+  let body = null;
+  try { body = await res.json(); } catch { /* non-json */ }
+  if (!res.ok) {
+    const msg = body?.message || body?.error || `HTTP ${res.status}`;
+    const err = new Error(msg); err.status = res.status; err.code = body?.error; throw err;
+  }
+  return body;
+}
+
+/* --------------------------------------------------------------- startup */
+async function boot() {
+  try {
+    const h = await api('/api/health');
+    $('#healthDot').className = 'dot ok';
+    $('#healthText').textContent = `${h.accounts} account${h.accounts === 1 ? '' : 's'} · live`;
+  } catch (e) {
+    $('#healthDot').className = 'dot err';
+    $('#healthText').textContent = e.status === 401 ? 'API key required' : 'offline';
+  }
+  await loadAccounts();
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) { $('#q').value = q; runSearch(); }
+  else renderHome();
+}
+
+async function loadAccounts() {
+  try {
+    const d = await api('/api/accounts');
+    S.accounts = d.accounts || [];
+  } catch (e) {
+    S.accounts = [];
+    if (e.status === 401) banner('err', 'API key required', 'This server was started with API_KEY. Click ⚙︎ and paste the key.');
+  }
+  const sel = $('#accountSel');
+  sel.innerHTML = '';
+  if (!S.accounts.length) {
+    sel.appendChild(el('option', null, 'no accounts'));
+    sel.disabled = true;
+  } else {
+    sel.disabled = false;
+    if (S.accounts.length > 1) {
+      const opt = el('option', null, `All accounts (${S.accounts.length})`);
+      opt.value = '__all__';
+      sel.appendChild(opt);
+    }
+    for (const a of S.accounts) {
+      const o = el('option', null, esc(a.name) + (a.session_ok === false ? ' (cookie?)' : ''));
+      o.value = a.name; sel.appendChild(o);
+    }
+    const known = S.account === '__all__' || S.accounts.some((a) => a.name === S.account);
+    if (!known) S.account = S.accounts[0].name;
+    sel.value = S.account;
+  }
+  renderAcctList();
+  if (!S.accounts.length) {
+    banner('warn', 'No accounts configured yet',
+      `Copy <code>accounts.example.json</code> to <code>accounts.json</code>, paste one <code>Cookie:</code> header per account, ` +
+      `then restart the server (or hit “Reload accounts”). The GOG store tab works without any account.`);
+  }
+}
+
+function renderAcctList() {
+  const box = $('#acctList'); box.innerHTML = '';
+  if (!S.accounts.length) { box.appendChild(el('div', 'banner info', 'No accounts loaded.')); return; }
+  for (const a of S.accounts) {
+    const ok = a.session_ok;
+    const row = el('div', 'pill', `<span class="dot ${ok === true ? 'ok' : ok === false ? 'err' : ''}"></span>
+      <strong style="color:var(--fg)">${esc(a.name)}</strong>
+      <span>· ${a.cookie_count} cookies${a.has_session_token ? '' : ' · no gog-al!'}</span>`);
+    row.style.margin = '0 0 8px';
+    box.appendChild(row);
+  }
+}
+
+function banner(kind, title, html) {
+  const b = el('div', 'banner ' + kind);
+  b.innerHTML = `<h4>${esc(title)}</h4>${html}`;
+  b.style.position = 'relative';
+  const x = el('button', 'btn ghost', '✕');
+  x.style.cssText = 'position:absolute;top:8px;right:8px;padding:2px 8px;border:0;color:var(--dim)';
+  x.onclick = () => b.remove();
+  b.appendChild(x);
+  $('#alerts').appendChild(b);
+}
+
+/* ------------------------------------------------------------------ views */
+function renderHome() {
+  $('#main').innerHTML = '';
+  if (S.account === '__all__') {
+    const banner = el('div', 'banner info');
+    banner.innerHTML = `<h4>All accounts</h4>
+      Searching here looks through every account and tells you which ones own a game.
+      Open a title to pick which account to pull links from.`;
+    $('#main').appendChild(banner);
+    const t = el('div', 'toolbar');
+    const b = el('button', 'btn', 'Browse the merged library');
+    b.onclick = showAllLibrary;
+    t.appendChild(b);
+    $('#main').appendChild(t);
+    return;
+  }
+  const g = el('div', 'banner info');
+  g.innerHTML = `<h4>Pick a game to get its links</h4>
+    Search your account's library (or the whole GOG store), then open a title to see every installer,
+    patch, DLC, soundtrack and Galaxy build with a fresh direct link. Links are generated at request
+    time and are valid for about a day — reload the game to refresh them.`;
+  $('#main').appendChild(g);
+
+  if (S.accounts.length) {
+    const t = el('div', 'toolbar');
+    const b = el('button', 'btn', 'Browse the whole library');
+    b.onclick = showLibrary;
+    t.appendChild(b);
+    $('#main').appendChild(t);
+  }
+}
+
+async function showLibrary() {
+  if (!S.account) return;
+  $('#main').innerHTML = '';
+  for (let i = 0; i < 6; i++) $('#main').appendChild(el('div', 'skeleton'));
+  try {
+    const d = await api(`/api/${encodeURIComponent(S.account)}/library`);
+    $('#main').innerHTML = '';
+    const head = el('div', 'meta');
+    head.innerHTML = `<strong style="color:var(--fg)">${d.total} games</strong> in <strong style="color:var(--acc)">${esc(S.account)}</strong>
+      <span>· index loaded ${new Date(d.fetched_at).toLocaleTimeString()}</span>`;
+    $('#main').appendChild(head);
+    const grid = el('div', 'grid');
+    for (const g of d.games) grid.appendChild(gameCard({ ...g, owned: true }, 'library'));
+    $('#main').appendChild(grid);
+  } catch (e) {
+    $('#main').innerHTML = '';
+    banner('err', 'Could not load library', esc(e.message));
+  }
+}
+
+async function showAllLibrary() {
+  $('#main').innerHTML = '';
+  for (let i = 0; i < 6; i++) $('#main').appendChild(el('div', 'skeleton'));
+  try {
+    const d = await api('/api/library');
+    $('#main').innerHTML = '';
+    const head = el('div', 'meta');
+    const failed = Object.keys(d.accounts_failed || {});
+    head.innerHTML = `<strong style="color:var(--fg)">${d.total_unique} unique games</strong>
+      across ${d.accounts.length} account(s)
+      ${failed.length ? `· <span style="color:var(--err)">failed: ${esc(failed.join(', '))}</span>` : ''}`;
+    $('#main').appendChild(head);
+    const grid = el('div', 'grid');
+    for (const g of d.games) grid.appendChild(gameCard({ ...g, owned: true }, 'library'));
+    $('#main').appendChild(grid);
+  } catch (e) {
+    $('#main').innerHTML = '';
+    banner('err', 'Could not load merged library', esc(e.message));
+  }
+}
+
+function gameCard(g, scope) {
+  const c = el('button', 'card');
+  const platforms = (g.platforms || []).map((p) => `<span class="tag">${esc(p)}</span>`).join('');
+  const own = g.owned_by?.length
+    ? g.owned_by.map((a) => `<span class="tag own">${esc(a)}</span>`).join('')
+    : scope === 'store'
+      ? (g.owned ? '<span class="tag own">owned</span>' : '<span class="tag notown">not owned</span>')
+      : '';
+  c.innerHTML = `<div class="t">${esc(g.title)}</div>
+    <div class="m">${platforms}${own}${g.release_date ? `<span class="tag">${esc(g.release_date)}</span>` : ''}</div>`;
+  c.onclick = () => openGame(g, scope);
+  return c;
+}
+
+function renderAccountChooser(g) {
+  $('#main').innerHTML = '';
+  const back = el('button', 'back', '← back');
+  back.onclick = () => { history.replaceState(null, '', location.pathname); renderHome(); };
+  $('#main').appendChild(back);
+  const head = el('div');
+  head.innerHTML = `<h2 class="title">${esc(g.title)}</h2>
+    <div class="meta"><span class="tag">id ${esc(g.id)}</span>
+      <span class="tag own">owned by ${g.owned_by.length} accounts</span></div>`;
+  $('#main').appendChild(head);
+  const box = el('div', 'banner info');
+  box.innerHTML = '<h4>Which account should the links come from?</h4>' +
+    "Pick one: the file list is the same everywhere, but the signed link is minted " +
+    "with that account's session cookie.";
+  const row = el('div', 'toolbar');
+  for (const name of g.owned_by) {
+    const b = el('button', 'btn primary', esc(name));
+    b.onclick = () => {
+      S.account = name;
+      localStorage.setItem('gog.account', name);
+      $('#accountSel').value = name;
+      openGame({ id: g.id, title: g.title, platforms: g.platforms }, 'library');
+    };
+    row.appendChild(b);
+  }
+  box.appendChild(row);
+  $('#main').appendChild(box);
+}
+
+async function openGame(g, scope) {
+  if (!S.account) { toast('Add an account first'); return; }
+  // came from a cross-account search: decide which account to use
+  if (g.owned_by && g.owned_by.length) {
+    if (g.owned_by.length === 1) {
+      S.account = g.owned_by[0];
+      localStorage.setItem('gog.account', S.account);
+      $('#accountSel').value = S.account;
+    } else {
+      renderAccountChooser(g);
+      return;
+    }
+  } else if (S.account === '__all__') {
+    banner('warn', 'Not owned by any account',
+      `“${esc(g.title)}” exists in the GOG store but none of your accounts own it.`);
+    return;
+  }
+  history.replaceState(null, '', `?game=${encodeURIComponent(g.id)}`);
+  S.game = g; S.filters = { type: '', os: '' };
+  $('#main').innerHTML = '';
+  const back = el('button', 'back', '← back');
+  back.onclick = () => { history.replaceState(null, '', location.pathname); S.game = null; renderHome(); };
+  $('#main').appendChild(back);
+  const head = el('div');
+  head.innerHTML = `<h2 class="title">${esc(g.title)}</h2>
+    <div class="meta"><span class="tag">id ${esc(g.id)}</span>
+      ${(g.platforms || []).map((p) => `<span class="tag">${esc(p)}</span>`).join('')}
+      ${scope === 'store' && g.owned === false ? '<span class="tag notown">not owned by this account</span>' : ''}
+    </div>`;
+  if (g.cover) { /* covers need network; the sandboxed preview can't load them */ }
+  $('#main').appendChild(head);
+  const loading = el('div', 'loading', '<span class="spin"></span> scraping GOG live and resolving download links…');
+  $('#main').appendChild(loading);
+
+  try {
+    const d = await api(`/api/${encodeURIComponent(S.account)}/game/${encodeURIComponent(g.id)}?resolve=1`);
+    loading.remove();
+    S.files = d.files || [];
+    renderGame(d);
+  } catch (e) {
+    loading.remove();
+    if (e.code === 'not_owned') {
+      banner('warn', 'Not in this account', `This account doesn't own “${esc(g.title)}”. Try the <strong>My library</strong> tab instead.`);
+    } else {
+      banner('err', 'Scrape failed', esc(e.message));
+    }
+  }
+}
+
+function renderGame(d) {
+  const wrap = el('div');
+  const types = [...new Set(d.files.map((f) => f.type))];
+  const oses = [...new Set(d.files.map((f) => f.os).filter(Boolean))];
+
+  const bar = el('div', 'toolbar');
+  bar.innerHTML = `<span class="pill">${d.counts.returned} files · ${esc(d.counts.total_size)}</span>
+    <span class="pill">links resolved in ${d.elapsed_ms} ms</span>
+    <span class="pill">${d.counts.failed ? `<span style="color:var(--err)">${d.counts.failed} failed</span>` : 'all links ok'}</span>
+    <span class="spacer" style="flex:1"></span>`;
+  const copyAll = el('button', 'btn', 'Copy all links');
+  copyAll.onclick = () => {
+    const text = visibleFiles().map((f) => f.download || f.url).join('\n');
+    copy(text, `${visibleFiles().length} links copied`);
+  };
+  bar.appendChild(copyAll);
+  const re = el('button', 'btn primary', 'Re-scrape');
+  re.onclick = () => openGame(S.game, 'library');
+  bar.appendChild(re);
+  wrap.appendChild(bar);
+
+  const chips = el('div', 'chips');
+  const mk = (label, kind, val) => {
+    const on = S.filters[kind] === val;
+    const c = el('button', 'chip' + (on ? ' on' : ''), esc(label));
+    c.onclick = () => { S.filters[kind] = on ? '' : val; renderGame(d); };
+    return c;
+  };
+  chips.appendChild(mk('all types', 'type', ''));
+  for (const t of types) chips.appendChild(mk(`${t} (${d.files.filter((f) => f.type === t).length})`, 'type', t));
+  if (oses.length) {
+    chips.appendChild(el('span', 'chip', '·'));
+    chips.appendChild(mk('all platforms', 'os', ''));
+    for (const o of oses) chips.appendChild(mk(o, 'os', o));
+  }
+  wrap.appendChild(chips);
+
+  const table = el('table');
+  table.innerHTML = `<thead><tr>
+      <th>File</th><th class="hide-sm">Type</th><th class="hide-sm">Platform</th>
+      <th class="hide-sm">Language</th><th>Size</th><th style="text-align:right">Link</th>
+    </tr></thead>`;
+  const tb = el('tbody');
+  for (const f of visibleFiles()) {
+    const tr = el('tr');
+    const exp = f.expires_in_seconds ? `<span class="badge">expires in ${Math.round(f.expires_in_seconds / 3600)}h</span>` : '';
+    tr.innerHTML = `
+      <td><div class="name">${esc(f.name || '(unnamed)')}</div>
+          <div class="sub">${esc(f.path)}</div></td>
+      <td class="hide-sm"><span class="badge ${esc(f.type)}">${esc(f.type)}</span></td>
+      <td class="hide-sm">${esc(f.os || '—')}</td>
+      <td class="hide-sm">${esc(f.language || '—')}</td>
+      <td class="size">${esc(f.size || fmt(f.bytes))}<br>${exp}</td>
+      <td><div class="acts"></div></td>`;
+    const acts = tr.querySelector('.acts');
+    if (f.download) {
+      const cp = el('button', 'btn', 'Copy');
+      cp.onclick = () => copy(f.download, 'Direct link copied');
+      const op = el('button', 'btn', 'Open');
+      op.onclick = () => window.open(f.download, '_blank');
+      acts.append(cp, op);
+    } else if (f.error) {
+      const b = el('span', 'badge', 'failed');
+      b.style.color = 'var(--err)';
+      b.title = f.error;
+      acts.appendChild(b);
+    }
+    const px = el('button', 'btn ghost', '⇩');
+    px.title = 'Stream through this server (no expiry)';
+    px.onclick = () => window.open(`/api/${encodeURIComponent(S.account)}/file?path=${encodeURIComponent(f.path)}&key=${encodeURIComponent(S.apiKey)}`, '_blank');
+    acts.appendChild(px);
+    tb.appendChild(tr);
+  }
+  table.appendChild(tb);
+  wrap.appendChild(table);
+
+  if (d.matched && d.resolved_via !== 'id' && d.matched.alternatives?.length) {
+    const alts = el('div', 'banner info');
+    alts.innerHTML = `<h4>Also matched</h4>` + d.matched.alternatives
+      .map((a) => `<a href="#" data-id="${esc(a.id)}">${esc(a.title)}</a>`).join(' · ');
+    alts.querySelectorAll('a').forEach((a) => {
+      a.onclick = (ev) => { ev.preventDefault(); openGame({ id: a.dataset.id, title: a.textContent }, 'store'); };
+    });
+    wrap.appendChild(alts);
+  }
+  $('#main').appendChild(wrap);
+  $('#main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function visibleFiles() {
+  return S.files.filter((f) =>
+    (!S.filters.type || f.type === S.filters.type) &&
+    (!S.filters.os || f.os === S.filters.os));
+}
+
+/* ----------------------------------------------------------------- search */
+async function runSearch() {
+  const q = $('#q').value.trim();
+  if (!q) { renderHome(); return; }
+  history.replaceState(null, '', `?q=${encodeURIComponent(q)}`);
+  $('#main').innerHTML = '';
+  for (let i = 0; i < 4; i++) $('#main').appendChild(el('div', 'skeleton'));
+
+  try {
+    if (S.account === '__all__') {
+      const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30&store=${S.scope === 'store' ? 1 : 0}`);
+      $('#main').innerHTML = '';
+      const failed = Object.keys(d.accounts_failed || {});
+      const head = el('div', 'meta');
+      head.innerHTML = `<strong style="color:var(--fg)">${d.count} matches</strong> for “${esc(q)}”
+        across ${d.accounts_searched.length} account(s)
+        ${failed.length ? `· <span style="color:var(--err)">failed: ${esc(failed.join(', '))}</span>` : ''}`;
+      $('#main').appendChild(head);
+      if (!d.results.length) banner('info', 'No accounts own a matching game', 'Try a shorter query.');
+      const grid = el('div', 'grid');
+      for (const g of d.results) grid.appendChild(gameCard(g, 'library'));
+      $('#main').appendChild(grid);
+      const store = (d.store?.results || []).filter((r) => !d.results.some((x) => x.id === r.id));
+      if (store.length) {
+        $('#main').appendChild(el('div', 'meta', '<strong style="color:var(--fg)">Also in the GOG store (not owned)</strong>'));
+        const g2 = el('div', 'grid');
+        for (const g of store.slice(0, 12)) g2.appendChild(gameCard({ ...g, owned: false }, 'store'));
+        $('#main').appendChild(g2);
+      }
+      return;
+    }
+    if (S.scope === 'store' || !S.account) {
+      const d = await api(`/api/catalog?q=${encodeURIComponent(q)}${S.account ? `&account=${encodeURIComponent(S.account)}` : ''}`);
+      $('#main').innerHTML = '';
+      const head = el('div', 'meta');
+      head.innerHTML = `<strong style="color:var(--fg)">${d.count} store results</strong> for “${esc(q)}”
+        ${d.account ? '· ownership checked against your account' : ''}`;
+      $('#main').appendChild(head);
+      const grid = el('div', 'grid');
+      for (const g of d.results) grid.appendChild(gameCard(g, 'store'));
+      $('#main').appendChild(grid);
+      if (!d.results.length) banner('info', 'No store matches', 'Try a shorter query.');
+      return;
+    }
+    const d = await api(`/api/${encodeURIComponent(S.account)}/search?q=${encodeURIComponent(q)}&store=1`);
+    $('#main').innerHTML = '';
+    const lib = d.library?.results || [];
+    const store = (d.store?.results || []).filter((s) => !lib.some((l) => l.id === s.id));
+    const head = el('div', 'meta');
+    head.innerHTML = `<strong style="color:var(--fg)">${lib.length} owned</strong> for “${esc(q)}” in ${esc(S.account)}
+      ${store.length ? `· ${store.length} also in the store` : ''}`;
+    $('#main').appendChild(head);
+    if (lib.length) {
+      const grid = el('div', 'grid');
+      for (const g of lib) grid.appendChild(gameCard({ ...g, owned: true }, 'library'));
+      $('#main').appendChild(grid);
+    } else {
+      banner('info', 'Nothing owned matches', `No game in <strong>${esc(S.account)}</strong> matches “${esc(q)}”. Store matches are below.`);
+    }
+    if (store.length) {
+      $('#main').appendChild(el('div', 'meta', '<strong style="color:var(--fg)">GOG store</strong>'));
+      const grid2 = el('div', 'grid');
+      for (const g of store.slice(0, 12)) grid2.appendChild(gameCard(g, 'store'));
+      $('#main').appendChild(grid2);
+    }
+  } catch (e) {
+    $('#main').innerHTML = '';
+    banner('err', 'Search failed', esc(e.message));
+  }
+}
+
+/* ------------------------------------------------------------------ misc */
+async function copy(text, msg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(msg);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast(msg); } catch { toast('Copy failed — select it manually'); }
+    ta.remove();
+  }
+}
+
+$('#goBtn').onclick = runSearch;
+$('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+$('#accountSel').onchange = (e) => { S.account = e.target.value; localStorage.setItem('gog.account', S.account); renderHome(); };
+document.querySelectorAll('.tabs button').forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+    S.scope = b.dataset.scope;
+    if ($('#q').value.trim()) runSearch();
+  };
+});
+$('#acctBtn').onclick = async () => { await loadAccounts(); $('#keyInput').value = S.apiKey; $('#acctDialog').showModal(); };
+$('#saveKey').onclick = () => {
+  S.apiKey = $('#keyInput').value.trim();
+  localStorage.setItem('gog.apiKey', S.apiKey);
+  $('#acctDialog').close(); toast('API key saved'); boot();
+};
+$('#reloadAccts').onclick = async () => {
+  try { await api('/api/accounts/reload'); await loadAccounts(); toast('Accounts reloaded'); }
+  catch (e) { toast('Reload failed: ' + e.message); }
+};
+
+boot();
+
+// deep link: /?game=<id>
+const startGame = new URLSearchParams(location.search).get('game');
+if (startGame && S.account) setTimeout(() => openGame({ id: startGame, title: 'game ' + startGame }, 'library'), 300);
+</script>
+</body>
+</html>

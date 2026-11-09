@@ -4,6 +4,8 @@
 > downloader. The multi-account **API server** you asked for is `server.js` —
 > see **[API.md](API.md)**: per-account routes (`/api/<account>/game/<id-or-name>`),
 > live scraping with no stored links, a search endpoint and a web UI.
+> Accounts can come from a local file **or a remote URL re-read on every call**
+> (`ACCOUNTS_URL=…`). The whole project also ships as `gog-link-api.zip`.
 
 A single-file, dependency-free Python tool that logs in with your existing GOG
 session cookie, walks your **purchased library**, and gives you the **direct
@@ -78,9 +80,10 @@ Where to find the cookie: log in at gog.com → DevTools → **Network** tab →
 any request to `www.gog.com` or `embed.gog.com` → **Request Headers** →
 right-click the `Cookie:` value → *Copy value*.
 
-Cheaper alternative: install a "cookies.txt export" extension and export for
-`gog.com`, then pass `--cookie-file cookies.txt` (Netscape format is detected
-automatically; a plain `a=1; b=2` line works too).
+Cheaper alternative: export the cookies with a browser extension and pass the file
+to `--cookie-file`. Three formats are auto-detected: a plain `a=1; b=2` header line,
+a Netscape `cookies.txt`, or a cookie-editor **JSON export** (the `[{domain, name,
+value, …}]` array).
 
 ---
 
