@@ -1,0 +1,11 @@
+{
+  "name": "gog-multi-account-link-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-account GOG library scraper exposed as a JSON API + web UI. Zero dependencies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" }
+}
